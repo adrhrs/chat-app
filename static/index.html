@@ -2,7 +2,8 @@
 <html>
 
 <head>
-    <title>WebSocket</title>
+    <title>Chat App</title>
+    <link rel="icon" type="image/x-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Circle-icons-chat.svg/512px-Circle-icons-chat.svg.png">
 
     <style type="text/css">
         .form {
@@ -81,7 +82,7 @@
             app.ws = new WebSocket("ws://localhost:8080/ws?username=" + name)
 
             app.ws.onopen = function() {
-                var message = '<b>'+name+'</b> is connected'
+                var message = '<b>' + name + '</b> is connected'
                 app.print(message)
             }
 

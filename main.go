@@ -11,14 +11,16 @@ import (
 )
 
 var (
-	users     = make(map[string]*WebSocketConnection)
-	rooms     = make(map[int][]string)
-	userRooms = make(map[int][]string)
-	msgRooms  = make(map[int][]Message)
+	users = make(map[string]*WebSocketConnection)
+	// rooms     = make(map[int][]string)
+	// userRooms = make(map[int][]string)
+	// msgRooms  = make(map[int][]Message)
 
 	UserConnected    = "user_connected"
 	UserDisconnected = "user_disconnected"
 	RegularChat      = "reg_chat"
+	host             = "0.0.0.0"
+	port             = "8080"
 )
 
 func main() {
@@ -45,8 +47,8 @@ func main() {
 		go handleIO(&currentConn, username)
 	})
 
-	log.Println("Server starting at :8080")
-	http.ListenAndServe(":8080", nil)
+	log.Println(fmt.Sprintf("Chat App starting at %v", port))
+	http.ListenAndServe(fmt.Sprintf("%v:%v", host, port), nil)
 }
 
 func handleIO(currentConn *WebSocketConnection, username string) {
@@ -74,10 +76,6 @@ func handleIO(currentConn *WebSocketConnection, username string) {
 		}
 		sendMessageToUser(username, payload.To, RegularChat, payload.Message)
 	}
-}
-
-func loadPreviousMessage(currentConn *WebSocketConnection, username string) {
-
 }
 
 func loadActiveUsers(username string) {
@@ -113,5 +111,4 @@ func sendMessageToUser(sender, target, chatType, message string) {
 			Message: "USER NOT FOUND",
 		})
 	}
-
 }
