@@ -47,7 +47,7 @@ func main() {
 		go handleIO(&currentConn, username)
 	})
 
-	log.Println(fmt.Sprintf("Chat App starting at %v", port))
+	log.Println(fmt.Sprintf("Chat App starting at %v:%v", host, port))
 	http.ListenAndServe(fmt.Sprintf("%v:%v", host, port), nil)
 }
 

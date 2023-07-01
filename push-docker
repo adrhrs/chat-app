@@ -1,0 +1,28 @@
+echo "initial pruning"
+docker system prune
+
+echo "initial images"
+docker images
+
+echo "build latest binary..."
+docker build -t chat-app .
+
+# echo "tag remote binary with latest binary >> echo $(docker images | grep 'shp-mn' | awk '{ print $3 }')"
+# docker tag $(docker images | grep 'shp-mn' | awk '{ print $3 }') adrhrs/shopee-mania
+
+docker images
+docker tag  adrhrs/chat-app
+
+echo "pushing..."
+docker push adrhrs/chat-app
+
+echo "pruning..."
+docker system prune
+
+echo "updated images"
+docker images
+
+# pulling docker
+
+docker pull adrhrs/chat-app
+docker run -d -p 8080:8080 adrhrs/chat-app
