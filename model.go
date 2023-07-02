@@ -6,6 +6,7 @@ type SocketPayload struct {
 	Message string `json:"msg"`
 	To      string `json:"to"`
 	From    string `json:"from"`
+	Type    string `json:"type"`
 }
 
 type SocketResponse struct {

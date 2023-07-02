@@ -15,14 +15,14 @@ var (
 	// userRooms = make(map[int][]string)
 	// msgRooms  = make(map[int][]Message)
 
-	// host             = "0.0.0.0"
+	// host        = "0.0.0.0"
+	port        = "8080"
 	listUser    = "list_user"
 	RegularChat = "reg_chat"
 
 	botUser = "bot"
 
-	port = "8080"
-	host = "127.0.0.1"
+	// host = "127.0.0.1"
 )
 
 func main() {
@@ -68,8 +68,7 @@ func handleIO(currentConn *WebSocketConnection, username string) {
 				return
 			}
 		}
-		fmt.Println(payload)
-		sendMessageToUser(username, payload.To, RegularChat, payload.Message)
+		sendMessageToUser(username, payload.To, payload.Type, payload.Message)
 	}
 }
 

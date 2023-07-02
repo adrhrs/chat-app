@@ -22,13 +22,14 @@
             </div>
             <div class="col-8">
                 <h3>Hi <span id="name">Guest</span>! </h3>
-                <div class="card">
+                <div id="chat-box" style="display: none;" class="card">
                     <div class="card-body" id="convo"></div>
                 </div>
-                <form onsubmit="sendMsg(); return false;">
+                <form id="form-box" style="display: none;" onsubmit="sendMsg(); return false;">
                     <div class="row mt-2">
                         <div class="col-lg-10">
-                            <input class="form-control" id="msg"></input>
+                            <small id="typing-elem"></small>
+                            <input class="form-control" onkeypress="isTyping()" id="msg"></input>
                         </div>
                         <div class="col-lg-2 d-grid">
                             <button type="submit" class="btn btn-outline-primary btn-sm btn-block">Send</button>
@@ -44,14 +45,19 @@
     var app = {}
     app.ws = undefined
     var name = ""
-    var host = "localhost"
+    var host = "178.128.111.25"
+        // var host = "localhost"
 
     const userListElemID = "user-list"
     const msgElemID = "msg"
     const convoElemID = "convo"
+    const typingElemID = "typing-elem"
+    const formBoxElemID = "form-box"
+    const chatBoxElemID = "chat-box"
 
     const listUser = "list_user"
     const regularChat = "reg_chat"
+    const isTypingType = "is_typing"
 
     var selectedUser = ""
     var messages = new Map()
@@ -66,16 +72,29 @@
         app.ws = new WebSocket("ws://" + host + ":8080/ws?username=" + name)
         app.ws.onopen = function() {
             console.log("connected")
+            showChatBox(false)
         }
         app.ws.onmessage = function(event) {
             var eventData = JSON.parse(event.data)
             if (eventData.type === listUser) {
                 loadActiveUser(eventData)
-                console.log("selected user", selectedUser)
             } else if (eventData.type === regularChat) {
                 receiveMsg(eventData)
+            } else if (eventData.type === isTypingType) {
+                handleIsTyping(eventData)
             }
         }
+    }
+
+    function showChatBox(value) {
+        if (value) {
+            document.getElementById(formBoxElemID).style.display = "block"
+            document.getElementById(chatBoxElemID).style.display = "block"
+        } else {
+            document.getElementById(formBoxElemID).style.display = "none"
+            document.getElementById(chatBoxElemID).style.display = "none"
+        }
+
     }
 
     // conversation functions
@@ -86,16 +105,12 @@
         } else {
             messages[key].push(msg)
         }
-        console.log(messages, selectedUser, key)
-
         if (selectedUser === key) {
             renderMsg(msg)
         }
     }
 
     function renderAllMsg(msgs) {
-
-
         for (msg of msgs) {
             renderMsg(msg);
         }
@@ -136,9 +151,13 @@
         msgs = {
             from: data.from,
             msg: data.msg,
-            to: name
+            to: name,
+            type: regularChat
         }
-        storeMsg(msgs.from, msgs)
+
+        if (msgs.from !== msgs.to) {
+            storeMsg(msgs.from, msgs)
+        }
     }
 
     function sendMsg() {
@@ -146,11 +165,35 @@
         msgs = {
             from: name,
             msg: msgForm.value,
-            to: selectedUser
+            to: selectedUser,
+            type: regularChat
         }
         storeMsg(msgs.to, msgs)
         app.ws.send(JSON.stringify(msgs))
         msgForm.value = ''
+    }
+
+    function isTyping() {
+        msgs = {
+            from: name,
+            to: selectedUser,
+            type: isTypingType,
+        }
+        app.ws.send(JSON.stringify(msgs))
+    }
+
+    function handleIsTyping(data) {
+
+        if (data.from === selectedUser) {
+            typingElem = document.getElementById(typingElemID)
+            typingElem.innerHTML = data.from + " is typing ..."
+
+            setTimeout(function() {
+                typingElem.innerHTML = ""
+            }, 1000)
+        }
+
+
     }
 
     //active user functions
@@ -159,7 +202,13 @@
         selectedUser = name
         resetUserList()
         userList = data.msg.split(",")
-        userList.forEach(renderUserList)
+
+        for (userName of userList) {
+            renderUserList(userName)
+        }
+
+
+
     }
 
     function resetUserList() {
@@ -167,24 +216,27 @@
         userListElem.innerHTML = ''
     }
 
-    function renderUserList(value, index, array) {
+    function renderUserList(userName) {
         userListElem = document.getElementById(userListElemID)
-        user = document.createElement("a")
-        user.className = 'list-group-item list-group-item-action'
-        user.innerHTML = value
-        user.id = value
 
-        if (value === name) {
-            user.classList.add("disabled")
-        }
+        userElem = document.createElement("a")
+        userElem.className = 'list-group-item list-group-item-action'
+        userElem.innerHTML = userName
+        userElem.id = userName
 
-        user.onclick = function() {
+        userElem.onclick = function() {
             handleSelectedUser(this)
         }
-        userListElem.appendChild(user)
+
+        userListElem.appendChild(userElem)
+
+
     }
 
     function handleSelectedUser(data) {
+
+        showChatBox(true)
+
         currSelectedUser = document.getElementById(selectedUser)
         currSelectedUser.className = 'list-group-item list-group-item-action'
         data.classList.add("active");
@@ -195,8 +247,6 @@
         if (messages[selectedUser] !== undefined) {
             renderAllMsg(messages[selectedUser])
         }
-
-        console.log("from", name, "target (selectedUser) :", selectedUser)
     }
 
     window.onload = app.init
