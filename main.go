@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -16,39 +15,36 @@ var (
 	// userRooms = make(map[int][]string)
 	// msgRooms  = make(map[int][]Message)
 
-	UserConnected    = "user_connected"
-	UserDisconnected = "user_disconnected"
-	RegularChat      = "reg_chat"
-	host             = "0.0.0.0"
-	port             = "8080"
+	// host             = "0.0.0.0"
+	listUser    = "list_user"
+	RegularChat = "reg_chat"
+
+	botUser = "bot"
+
+	port = "8080"
+	host = "127.0.0.1"
 )
 
 func main() {
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		content, err := ioutil.ReadFile("static/index.html")
-		if err != nil {
-			http.Error(w, "Could not open requested file", http.StatusInternalServerError)
-			return
-		}
+	http.HandleFunc("/ping", ping)
 
-		fmt.Fprintf(w, "%s", content)
-	})
-
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		currentGorillaConn, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
-		if err != nil {
-			http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
-		}
-
-		username := r.URL.Query().Get("username")
-		currentConn := WebSocketConnection{Conn: currentGorillaConn, Username: username}
-		users[username] = &currentConn
-		go handleIO(&currentConn, username)
-	})
+	http.HandleFunc("/", serveHTML)
+	http.HandleFunc("/ws", handleWebSocket)
 
 	log.Println(fmt.Sprintf("Chat App starting at %v:%v", host, port))
 	http.ListenAndServe(fmt.Sprintf("%v:%v", host, port), nil)
+}
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	currentGorillaConn, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
+	if err != nil {
+		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
+	}
+
+	username := r.URL.Query().Get("username")
+	currentConn := WebSocketConnection{Conn: currentGorillaConn, Username: username}
+	users[username] = &currentConn
+	go handleIO(&currentConn, username)
 }
 
 func handleIO(currentConn *WebSocketConnection, username string) {
@@ -58,57 +54,48 @@ func handleIO(currentConn *WebSocketConnection, username string) {
 		}
 	}()
 
-	// loadPreviousMessage(currentConn, username)
 	loadActiveUsers(username)
-	sendMessageToAll(username, UserConnected, " joining the chat")
-	// broadcastMessage(currentConn, UserJoin, "", "is joining")
+	log.Println(username, "is connected", users)
 
 	for {
 		payload := SocketPayload{}
 		err := currentConn.ReadJSON(&payload)
 		if err != nil {
 			if strings.Contains(err.Error(), "websocket: close") {
-				// broadcastMessage(currentConn, UserLeft, "", "is disconnected")
-				sendMessageToAll(username, UserDisconnected, " left the chat")
 				delete(users, currentConn.Username)
+				loadActiveUsers(username)
+				log.Println(username, "is disconnected", users)
 				return
 			}
 		}
+		fmt.Println(payload)
 		sendMessageToUser(username, payload.To, RegularChat, payload.Message)
 	}
 }
 
 func loadActiveUsers(username string) {
-	for _, u := range users {
-		if u.Username != username {
-			sendMessageToUser(u.Username, username, UserConnected, " is available")
-		}
+	activeUsers := []string{}
+	for username := range users {
+		activeUsers = append(activeUsers, username)
 	}
+
+	message := (strings.Join(activeUsers[:], ","))
+	sendMessageToAll(botUser, listUser, message)
+
 }
 
-// connect and disconnect event
 func sendMessageToAll(sender, chatType, message string) {
 	for _, u := range users {
-		if u.Username != sender {
-			sendMessageToUser(sender, u.Username, chatType, message)
-		}
+		sendMessageToUser(sender, u.Username, chatType, message)
 	}
 }
 
-// chat specific func
 func sendMessageToUser(sender, target, chatType, message string) {
-	senderConn := users[sender]
 	if targetConn, ok := users[target]; ok {
 		targetConn.WriteJSON(SocketResponse{
 			From:    sender,
 			Type:    chatType,
 			Message: message,
-		})
-	} else {
-		senderConn.WriteJSON(SocketResponse{
-			From:    "BOT",
-			Type:    chatType,
-			Message: "USER NOT FOUND",
 		})
 	}
 }

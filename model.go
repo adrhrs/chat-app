@@ -3,14 +3,15 @@ package main
 import "github.com/gorilla/websocket"
 
 type SocketPayload struct {
-	Message string
-	To      string
+	Message string `json:"msg"`
+	To      string `json:"to"`
+	From    string `json:"from"`
 }
 
 type SocketResponse struct {
-	From    string
-	Type    string
-	Message string
+	From    string `json:"from"`
+	Type    string `json:"type"`
+	Message string `json:"msg"`
 }
 
 type WebSocketConnection struct {
