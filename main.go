@@ -15,7 +15,7 @@ var (
 	// userRooms = make(map[int][]string)
 	// msgRooms  = make(map[int][]Message)
 
-	// host        = "0.0.0.0"
+	host        = "0.0.0.0"
 	port        = "8080"
 	listUser    = "list_user"
 	RegularChat = "reg_chat"

@@ -16,11 +16,11 @@
 
     <div class="container">
         <div class="row m-5">
-            <div class="col-4">
+            <div class="col-lg-4 mb-3">
                 <h3>Active Users</h3>
                 <div class="list-group" id="user-list" role="tablist"></div>
             </div>
-            <div class="col-8">
+            <div class="col-lg-8">
                 <h3>Hi <span id="name">Guest</span>! </h3>
                 <div id="chat-box" style="display: none;" class="card">
                     <div class="card-body" id="convo"></div>
@@ -29,7 +29,7 @@
                     <div class="row mt-2">
                         <div class="col-lg-10">
                             <small id="typing-elem"></small>
-                            <input class="form-control" onkeypress="isTyping()" id="msg"></input>
+                            <input placeholder="type a message..." class="form-control mb-2" onkeypress="isTyping()" id="msg"></input>
                         </div>
                         <div class="col-lg-2 d-grid">
                             <button type="submit" class="btn btn-outline-primary btn-sm btn-block">Send</button>
@@ -62,13 +62,10 @@
     var selectedUser = ""
     var messages = new Map()
 
-
     // core func
     app.init = function() {
-
         name = prompt('Enter your name please:') || "guest"
         document.getElementById("name").innerHTML = name
-
         app.ws = new WebSocket("ws://" + host + ":8080/ws?username=" + name)
         app.ws.onopen = function() {
             console.log("connected")
@@ -94,7 +91,6 @@
             document.getElementById(formBoxElemID).style.display = "none"
             document.getElementById(chatBoxElemID).style.display = "none"
         }
-
     }
 
     // conversation functions
@@ -117,34 +113,27 @@
     }
 
     function renderMsg(data) {
-
         convo = document.getElementById(convoElemID)
         row = document.createElement("div")
         row.className = 'row mb-2'
-
         if (data.from === name) {
             col = document.createElement("div")
             col.className = 'col-lg-6 offset-lg-6'
-
             card = document.createElement("div")
-            card.className = 'card text-white bg-primary'
+            card.className = 'card text-white bg-success'
         } else {
             col = document.createElement("div")
             col.className = 'col-lg-6'
-
             card = document.createElement("div")
             card.className = 'card text-white bg-secondary'
         }
-
         cardBody = document.createElement("div")
         cardBody.className = 'card-body'
         cardBody.innerHTML = data.msg
-
         card.appendChild(cardBody)
         col.appendChild(card)
         row.appendChild(col)
         convo.appendChild(row)
-
     }
 
     function receiveMsg(data) {
@@ -154,7 +143,6 @@
             to: name,
             type: regularChat
         }
-
         if (msgs.from !== msgs.to) {
             storeMsg(msgs.from, msgs)
         }
@@ -183,17 +171,13 @@
     }
 
     function handleIsTyping(data) {
-
         if (data.from === selectedUser) {
             typingElem = document.getElementById(typingElemID)
             typingElem.innerHTML = data.from + " is typing ..."
-
             setTimeout(function() {
                 typingElem.innerHTML = ""
             }, 1000)
         }
-
-
     }
 
     //active user functions
@@ -202,13 +186,9 @@
         selectedUser = name
         resetUserList()
         userList = data.msg.split(",")
-
         for (userName of userList) {
             renderUserList(userName)
         }
-
-
-
     }
 
     function resetUserList() {
@@ -218,30 +198,22 @@
 
     function renderUserList(userName) {
         userListElem = document.getElementById(userListElemID)
-
         userElem = document.createElement("a")
         userElem.className = 'list-group-item list-group-item-action'
         userElem.innerHTML = userName
         userElem.id = userName
-
         userElem.onclick = function() {
             handleSelectedUser(this)
         }
-
         userListElem.appendChild(userElem)
-
-
     }
 
     function handleSelectedUser(data) {
-
         showChatBox(true)
-
         currSelectedUser = document.getElementById(selectedUser)
         currSelectedUser.className = 'list-group-item list-group-item-action'
         data.classList.add("active");
         selectedUser = data.innerHTML
-
         convo = document.getElementById(convoElemID)
         convo.innerHTML = ''
         if (messages[selectedUser] !== undefined) {
